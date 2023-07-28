@@ -7,9 +7,11 @@ import PageHeader from "../../components/Header/Header";
 
 import userService from "../../utils/userService";
 
+import * as likesApi from "../../utils/likeApi";
+
 export default function ProfilePage() {
   const [posts, setPosts] = useState([]);
-  const [user, setUser] = useState({});
+  const [userState, setUserState] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,25 +20,48 @@ export default function ProfilePage() {
   const { username } = useParams();
   console.log(username);
 
+  async function addLike(postId){
+    try{
+      const response = await likesApi.create(postId);
+      // update state
+      getProfile();
+    } catch(err) {
+      setError('error creating like');
+      console.log(err, ' error, check terminal');
+    };
+  };
+
+  async function removeLike(likeId) {
+    try {
+      const response = await likesApi.removeLike(likeId);
+      // update state
+      getProfile();
+    } catch(err) {
+      setError('error removing like');
+      console.log(err, 'error, check terminal');
+    };
+  };
+
+  async function getProfile() {
+    // make the api call,
+    // then log the response,
+    // then update the state
+
+    try {
+      setLoading(true);
+      const response = await userService.getProfile(username);
+      console.log(response);
+      setPosts(response.posts);
+      setUserState(response.user);
+      setLoading(false)
+    } catch (err) {
+      setError("Error loading profile");
+      console.log(err, " err in profile");
+    };
+  };
+
   useEffect(() => {
-    async function getProfile() {
-      // make the api call,
-      // then log the response,
-      // then update the state
-
-      try {
-        setLoading(true);
-        const response = await userService.getProfile(username);
-        console.log(response);
-        setPosts(response.posts);
-        setUser(response.user);
-        setLoading(false)
-      } catch (err) {
-        setError("Error loading profile");
-        console.log(err, " err in profile");
-      }
-    }
-
+    
     getProfile();
   }, []);
 
@@ -58,12 +83,21 @@ export default function ProfilePage() {
       </Grid.Row>
       <Grid.Row>
         <Grid.Column>
-          <ProfileBio user={user} />
+          <ProfileBio 
+            user={userState} 
+          />
         </Grid.Column>
       </Grid.Row>
       <Grid.Row centered>
         <Grid.Column style={{ maxWidth: 750 }}>
-          <PostGallery posts={posts} itemsPerRow={3} isProfile={true}/> 
+          <PostGallery 
+            posts={posts} 
+            itemsPerRow={3} 
+            isProfile={true}
+            user={user}
+            addLike={addLike}
+            removeLike={removeLike}
+          /> 
         </Grid.Column>
       </Grid.Row>
     </Grid>
